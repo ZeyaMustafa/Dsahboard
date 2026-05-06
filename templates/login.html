@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Login - MarketPulse{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <div class="page-header d-block mb-3">
+    <div class="page-kicker">Welcome Back</div>
+    <h1 class="page-title">Sign in to MarketPulse</h1>
+    <p class="page-subtitle">Access your sales, inventory, and forecast workspace.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-4">
+      <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.email.label(class="form-label fw-bold") }}
+          {{ form.email(class="form-control", placeholder="owner@example.com") }}
+          {% for error in form.email.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.password.label(class="form-label fw-bold") }}
+          <div class="password-field">
+            {{ form.password(class="form-control", placeholder="Enter password") }}
+            <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" title="Show password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="form-check mb-4">
+          {{ form.remember(class="form-check-input") }}
+          {{ form.remember.label(class="form-check-label") }}
+        </div>
+        <div class="d-grid">
+          {{ form.submit(class="btn btn-primary btn-lg") }}
+        </div>
+      </form>
+    </div>
+    <div class="card-footer text-center">
+      <span class="text-muted">New here?</span> <a href="{{ url_for('signup') }}">Create an account</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

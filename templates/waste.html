@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Waste Reduction - SuperMarket Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Waste Reduction</div>
+    <h1 class="page-title">Products at risk before they become losses</h1>
+    <p class="page-subtitle">Identify expiry, slow movement, and waste risks with action recommendations.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Risk items</div>
+    <div class="fw-bold">{{ waste_data | length }}</div>
+  </div>
+</div>
+
+<!-- Waste Metrics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-exclamation-triangle"></i> High Waste Risk Items</div>
+      <div class="metric-value text-danger">
+        {{ (waste_data | selectattr('waste_risk', 'equalto', 'Expired') | list | length) + (waste_data | selectattr('waste_risk', 'equalto', 'Very High') | list | length) }}
+      </div>
+      <div class="metric-small">Expired or urgent freshness risk</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-triangle-exclamation"></i> High Waste Risk Items</div>
+      <div class="metric-value text-warning">
+        {{ waste_data | selectattr('waste_risk', 'equalto', 'High') | list | length }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-calendar-alt"></i> Avg Days of Inventory</div>
+      <div class="metric-value">
+        {% if waste_data | length > 0 %}
+          {{ (waste_data | map(attribute='days_of_inventory') | list | sum / waste_data | length) | round(1) }}
+        {% else %}
+          0
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percent"></i> Potential Savings</div>
+      <div class="metric-value text-success">
+        {% if waste_data | length > 0 %}
+          {{ (waste_data | map(attribute='Total_Sale') | list | sum * 0.15) | round(0) }}
+        {% else %}
+          0
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Waste Reduction Table -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-table"></i> Waste Risk Analysis</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Expiry</th>
+                <th>Total Sales</th>
+                <th>Days of Inventory</th>
+                <th>Waste Risk</th>
+                <th>Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in waste_data %}
+              <tr>
+                <td><strong>{{ item.Product_Name }}</strong></td>
+                <td>{{ item.Category }}</td>
+                <td>
+                  {% if item.current_inventory|int <= 0 %}
+                    <span class="badge bg-danger">Out of Stock</span>
+                  {% else %}
+                    {{ item.current_inventory | round(0) }}
+                  {% endif %}
+                </td>
+                <td>
+                  {{ item.expiry_label }}
+                  <div class="small text-muted">{{ item.tracking_label }}</div>
+                </td>
+                <td>${{ "%.2f"|format(item.Total_Sale) }}</td>
+                <td>{{ "%.1f"|format(item.days_of_inventory) }}</td>
+                <td>
+                  {% if item.waste_risk == 'Expired' %}
+                    <span class="badge bg-danger">Expired</span>
+                  {% elif item.waste_risk == 'Very High' %}
+                    <span class="badge bg-danger">Very High</span>
+                  {% elif item.waste_risk == 'High' %}
+                    <span class="badge bg-warning text-dark">High</span>
+                  {% elif item.waste_risk == 'Medium' %}
+                    <span class="badge bg-info">Medium</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Low</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-info">{{ item.recommended_action }}</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Waste Reduction Recommendations -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-lightbulb"></i> Waste Reduction Recommendations</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for item in waste_data %}
+          {% if item.waste_risk in ['Expired', 'Very High'] %}
+          <div class="col-md-4 mb-3">
+            <div class="card border-left-danger text-dark h-100">
+              <div class="card-body">
+                <h6><i class="fas fa-exclamation-triangle text-danger"></i> {{ item.Product_Name }}</h6>
+                <p class="mb-1"><small>Category: {{ item.Category }}</small></p>
+                <p class="mb-1"><small>Days of Inventory: {{ "%.1f"|format(item.days_of_inventory) }} days</small></p>
+                <p class="mb-0"><strong>Action:</strong> {{ item.recommended_action }}</p>
+              </div>
+            </div>
+          </div>
+          {% elif item.waste_risk in ['High', 'Medium'] %}
+          <div class="col-md-4 mb-3">
+            <div class="card border-left-warning text-dark h-100">
+              <div class="card-body">
+                <h6><i class="fas fa-triangle-exclamation text-warning"></i> {{ item.Product_Name }}</h6>
+                <p class="mb-1"><small>Category: {{ item.Category }}</small></p>
+                <p class="mb-1"><small>Days of Inventory: {{ "%.1f"|format(item.days_of_inventory) }} days</small></p>
+                <p class="mb-0"><strong>Action:</strong> {{ item.recommended_action }}</p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Any waste reduction-specific JavaScript can go here
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local app/runtime files
+instance/
+*.log
+server_run_stdout.log
+server_run_stderr.log
+
+# Local backup snapshots
+*.backup
+*.backup[0-9]*
+*.bak
+*.bak[0-9]*
+*.orig
+*.old
+*.broken
+*.before_*
+*.backup_before_*
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/

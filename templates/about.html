@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}About - Supermarket Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+  <h1><i class="fas fa-info-circle"></i> About This Dashboard</h1>
+  <p>This supermarket sales dashboard provides interactive visualizations and analytics for your sales data.</p>
+  
+  <h2>Features</h2>
+  <ul>
+    <li><strong>Date Range Selection:</strong> Filter data by custom date ranges or use preset options (Today, Yesterday, Last 7 Days, Last 30 Days, This Month, Last Month, Year-to-Date)</li>
+    <li><strong>Interactive Charts:</strong> Built with Plotly for hover details, zoom, and pan capabilities</li>
+    <li><strong>Data Export:</strong> Download filtered data as CSV</li>
+    <li><strong>Sales Forecasting:</strong> 7-day moving average forecast for sales and profit</li>
+    <li><strong>Business Intelligence:</strong> Top products analysis, category breakdown, and trend analysis</li>
+  </ul>
+  
+  <h2>How to Use</h2>
+  <ol>
+    <li>Use the date range controls at the top to select your desired period</li>
+    <li>Explore the interactive charts - hover for details, click legend items to toggle visibility</li>
+    <li>Use the Export CSV button to download the currently filtered data</li>
+    <li>Navigate to Daily, Weekly, or Monthly views for quick period selection</li>
+  </ol>
+  
+  <h2>Data Requirements</h2>
+  <p>Place your CSV files in the <code>data/</code> directory with the following columns:</p>
+  <ul>
+    <li><code>Date</code> (YYYY-MM-DD format)</li>
+    <li><code>Product Category</code></li>
+    <li><code>Sales Amount</code></li>
+    <li><code>Quantity Sold</code></li>
+  </ul>
+  
+  <p>The system will automatically calculate derived metrics like Total Sale and Total Profit.</p>
+  
+  <h2>Technical Details</h2>
+  <p>Built with:</p>
+  <ul>
+    <li>Flask (Python web framework)</li>
+    <li>Bootstrap 5 (responsive design)</li>
+    <li>Plotly (interactive charts)</li>
+    <li>Pandas & NumPy (data processing)</li>
+    <li>Matplotlib & Seaborn (static plotting fallback)</li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Monthly Report - Supermarket Dashboard{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Month</div>
+      <div class="metric-value">{{ month }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Monthly Sales</div>
+      <div class="metric-value">${{ "%.2f"|format(monthly_sales) }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Monthly Profit</div>
+      <div class="metric-value">${{ "%.2f"|format(monthly_profit) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Monthly Trend</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ monthly_trend }}" class="img-fluid" alt="Monthly Trend">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Top Products</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ top_monthly }}" class="img-fluid" alt="Top Products Monthly">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Category Analysis</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ cat_monthly }}" class="img-fluid" alt="Category Analysis Monthly">
+    </div>
+  </div>
+</div>
+{% endblock %}

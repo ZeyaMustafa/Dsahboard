@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Daily Report - Supermarket Dashboard{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label">Date</div>
+      <div class="metric-value">{{ date }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label">Sales</div>
+      <div class="metric-value">${{ "%.2f"|format(daily_sales) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label">Profit</div>
+      <div class="metric-value">${{ "%.2f"|format(daily_profit) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label">Top Product</div>
+      <div class="metric-value">{{ top_product }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="metric-label">Units Sold (Top Product)</div>
+      <div class="metric-value">{{ top_product_units }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Daily Trend</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ daily_trend }}" class="img-fluid" alt="Daily Trend">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Top Products</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ top_daily }}" class="img-fluid" alt="Top Products">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Category Analysis</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ cat_daily }}" class="img-fluid" alt="Category Analysis">
+    </div>
+  </div>
+</div>
+{% endblock %}

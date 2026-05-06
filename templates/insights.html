@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Insights - SuperMarket Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Decision Center</div>
+    <h1 class="page-title">Business insights and recommendations</h1>
+    <p class="page-subtitle">Actionable intelligence to drive better store decisions.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Open insights</div>
+    <div class="fw-bold">{{ insights_data | length }}</div>
+  </div>
+</div>
+
+{% if ai_decision %}
+<div class="row mb-4">
+  <div class="col-lg-8 mb-3 mb-lg-0">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5><i class="fas fa-wand-magic-sparkles"></i> AI Decision Summary</h5>
+      </div>
+      <div class="card-body">
+        {% for line in ai_decision.summary %}
+        <p class="mb-2">{{ line }}</p>
+        {% endfor %}
+        <p class="text-muted small mb-0">{{ ai_decision.rendering_note }} Generated {{ ai_decision.generated_at }}{% if ai_decision.cached %} from cache{% endif %}.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="metric-card h-100">
+      <div class="metric-label"><i class="fas fa-bolt"></i> Highest priority action</div>
+      {% if ai_decision.product_actions %}
+      {% set top_ai = ai_decision.product_actions[0] %}
+      <div class="metric-value">{{ top_ai.action_type }}</div>
+      <div class="metric-small">{{ top_ai.Product_Name }} - {{ "%.0f"|format(top_ai.confidence) }}% confidence</div>
+      {% else %}
+      <div class="metric-value">None</div>
+      <div class="metric-small">No urgent action found</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3 align-items-stretch mb-4">
+  <div class="col-xl-4">
+    <div class="d-flex flex-column gap-3 h-100">
+      <div class="metric-card flex-fill mb-0">
+        <div class="metric-label"><i class="fas fa-receipt"></i> Invoice Count</div>
+        <div class="metric-value">{{ invoice_count }}</div>
+        <div class="metric-small">${{ "%.2f"|format(avg_transaction_value) }} average invoice</div>
+      </div>
+      <div class="metric-card flex-fill mb-0">
+        <div class="metric-label"><i class="fas fa-gem"></i> High-Value Invoices</div>
+        <div class="metric-value">{{ high_value_invoice_count }}</div>
+        <div class="metric-small">Invoices at or above ${{ "%.0f"|format(high_value_invoice_floor) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-8">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5><i class="fas fa-basket-shopping"></i> Invoice-Based Bundle Signals</h5>
+      </div>
+      <div class="card-body">
+        {% if invoice_bundle_candidates %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Bundle</th>
+                <th>Shared Invoices</th>
+                <th>Confidence</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bundle in invoice_bundle_candidates[:5] %}
+              <tr>
+                <td><strong>{{ bundle.anchor_product }}</strong> + {{ bundle.add_on_product }}</td>
+                <td>{{ bundle.pair_count }}</td>
+                <td>{{ "%.0f"|format(bundle.confidence_ab * 100) }}%</td>
+                <td>{{ bundle.recommendation }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No invoice pair crossed {{ invoice_bundle_threshold }} shared invoices in the last 7 days.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  {% for insight in insights_data %}
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-start mb-3">
+          <div class="flex-shrink-0 bg-light rounded-circle p-3 me-3">
+            <i class="fas fa-{{ insight.icon | default('info-circle') }} text-{{ insight.type }}"></i>
+          </div>
+          <div>
+            <h5 class="card-title mb-1">{{ insight.title }}</h5>
+            <p class="card-text text-muted mb-2">{{ insight.text }}</p>
+            {% if insight.action %}
+            <a href="{{ insight.url }}" class="btn btn-{{ insight.type }} btn-sm px-3">{{ insight.action }}</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if ai_decision and ai_decision.product_actions %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-list-check"></i> Ranked Seller Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Action</th>
+                <th>Why</th>
+                <th>7-Day Demand</th>
+                <th>Stock</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for action in ai_decision.product_actions %}
+              <tr>
+                <td><strong>{{ action.Product_Name }}</strong></td>
+                <td>{{ action.Category }}</td>
+                <td>{{ action.suggested_action }}</td>
+                <td>{{ action.reason }}</td>
+                <td>{{ action.forecast_units_7d }}</td>
+                <td>
+                  {% if action.current_stock <= 0 %}
+                    <span class="badge bg-danger">Out of Stock</span>
+                  {% else %}
+                    {{ action.current_stock }}
+                  {% endif %}
+                </td>
+                <td>{{ "%.0f"|format(action.confidence) }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-chart-line"></i> Performance Trends</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <div id="trend-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-layer-group"></i> Category Analysis</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <div id="category-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

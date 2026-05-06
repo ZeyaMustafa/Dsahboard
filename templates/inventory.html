@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Inventory - MarketPulse{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Inventory Control</div>
+    <h1 class="page-title">Products, stock, and sales tracking</h1>
+    <p class="page-subtitle">Add inventory, record sales, and see which products are moving or sitting idle.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Performance period</div>
+    <div class="fw-bold">{{ period_label }}</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-boxes-stacked me-2"></i>Products</div>
+      <div class="metric-value">{{ inventory_total_products }}</div>
+      <div class="metric-small">Stored in inventory</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-layer-group me-2"></i>Units On Hand</div>
+      <div class="metric-value">{{ inventory_total_units }}</div>
+      <div class="metric-small">Current stock count</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-triangle-exclamation me-2"></i>Low Stock</div>
+      <div class="metric-value">{{ inventory_low_stock }}</div>
+      <div class="metric-small">At or below reorder level</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-warehouse me-2"></i>Inventory Cost</div>
+      <div class="metric-value">${{ "%.2f"|format(inventory_value) }}</div>
+      <div class="metric-small">Estimated cost value</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Add Inventory Product</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('add_inventory_item') }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Product Name</label>
+              <input class="form-control" name="product_name" required placeholder="Organic Milk">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              <input class="form-control" name="category" required placeholder="Dairy">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">SKU / Product ID</label>
+              <input class="form-control" name="product_id" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Barcode</label>
+              <input class="form-control" name="barcode" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Supplier</label>
+              <input class="form-control" name="supplier" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Current Stock</label>
+              <input class="form-control" name="current_stock" type="number" min="0" value="0" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Sale Price</label>
+              <input class="form-control" name="unit_price" type="number" min="0" step="0.01" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Cost Price</label>
+              <input class="form-control" name="cost_price" type="number" min="0" step="0.01" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Reorder Level</label>
+              <input class="form-control" name="reorder_level" type="number" min="0" value="10" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Expiry Date</label>
+              <input class="form-control" name="expiry_date" type="date">
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+              <div class="form-check mb-2">
+                <input class="form-check-input" id="isPerishable" name="is_perishable" type="checkbox">
+                <label class="form-check-label" for="isPerishable">Perishable / expiry-tracked product</label>
+              </div>
+            </div>
+            <div class="col-12 d-grid">
+              <button class="btn btn-primary" type="submit">Save Product</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Record Sale</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('record_sale') }}">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label">Product</label>
+              <select class="form-select" name="product_id" required>
+                <option value="">Choose product</option>
+                {% for item in inventory_items %}
+                  <option value="{{ item.product_id }}" {% if item.current_stock <= 0 %}disabled{% endif %}>
+                    {{ item.product_name }} - {% if item.current_stock <= 0 %}Out of stock{% else %}{{ item.current_stock }} in stock{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Sale Date</label>
+              <input class="form-control" name="sale_date" type="date" value="{{ end_date }}" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Units Sold</label>
+              <input class="form-control" name="units_sold" type="number" min="1" value="1" required>
+            </div>
+            <div class="col-md-7">
+              <label class="form-label">Invoice Number</label>
+              <input class="form-control" name="invoice_no" placeholder="Auto-generated if blank">
+            </div>
+            <div class="col-12 d-grid align-items-end">
+              <button class="btn btn-primary mt-md-4" type="submit">Record Sale & Update Stock</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top 10 Selling Products</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr><th>Product</th><th>Units</th><th>Sales</th><th>Profit</th></tr>
+            </thead>
+            <tbody>
+              {% for item in top_products_list %}
+              <tr>
+                <td><strong>{{ item.Product_Name }}</strong><div class="small text-muted">{{ item.Category }}</div></td>
+                <td>{{ item.Units_Sold|int }}</td>
+                <td>${{ "%.2f"|format(item.Total_Sale) }}</td>
+                <td>${{ "%.2f"|format(item.Total_Profit) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-arrow-trend-down me-2"></i>Top 10 Worst Performers</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr><th>Product</th><th>Units</th><th>Sales</th></tr>
+            </thead>
+            <tbody>
+              {% for item in worst_products_list %}
+              <tr>
+                <td><strong>{{ item.Product_Name }}</strong><div class="small text-muted">{{ item.Category }}</div></td>
+                <td>{{ item.Units_Sold|int }}</td>
+                <td>${{ "%.2f"|format(item.Total_Sale) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Current Inventory</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Barcode</th>
+            <th>Supplier</th>
+            <th>Sale Price</th>
+            <th>Cost</th>
+            <th>Profit/Unit</th>
+            <th>Stock</th>
+            <th>Reorder Level</th>
+            <th>Expiry</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventory_items %}
+          <tr>
+            <td><strong>{{ item.product_name }}</strong><div class="small text-muted">{{ item.product_id }}</div></td>
+            <td>{{ item.category }}</td>
+            <td>{{ item.barcode or '-' }}</td>
+            <td>{{ item.supplier or '-' }}</td>
+            <td>${{ "%.2f"|format(item.unit_price) }}</td>
+            <td>${{ "%.2f"|format(item.cost_price) }}</td>
+            <td>${{ "%.2f"|format(item.profit_per_unit) }}</td>
+            <td>
+              {% if item.current_stock <= 0 %}
+                <span class="badge bg-danger">Out of Stock</span>
+              {% else %}
+                {{ item.current_stock }}
+              {% endif %}
+            </td>
+            <td>{{ item.reorder_level }}</td>
+            <td>
+              {% if item.expiry_date %}
+                {{ item.expiry_date }}
+              {% elif item.is_perishable %}
+                <span class="badge bg-info">Perishable</span>
+              {% else %}
+                <span class="badge bg-secondary">N/A</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.stock_status == 'Out of Stock' %}
+                <span class="badge bg-danger">Out of Stock</span>
+              {% elif item.stock_status == 'Low Stock' %}
+                <span class="badge bg-danger">Low Stock</span>
+              {% else %}
+                <span class="badge bg-success">In Stock</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
