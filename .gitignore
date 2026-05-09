@@ -1,0 +1,116 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+*.pyo
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Flask/local app runtime
+instance/
+.webassets-cache
+*.log
+server_run_stdout.log
+server_run_stderr.log
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+
+# Local backup snapshots
+*.backup
+*.backup[0-9]*
+*.bak
+*.bak[0-9]*
+*.orig
+*.old
+*.broken
+*.before_*
+*.backup_before_*
+
+# Virtual environments
+.env
+.envrc
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+__pypackages__/
+.pdm-python
+.pdm-build/
+.pixi/
+
+# Tooling caches
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pyre/
+.pytype/
+cython_debug/
+
+# Notebook/editor/OS noise
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+.spyderproject
+.spyproject
+.ropeproject
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+tempCodeRunnerFile.py
+
+# Docs and generated site output
+docs/_build/
+/site
+
+# Secrets for common app frameworks
+.streamlit/secrets.toml
+.pypirc

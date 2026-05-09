@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+{% block title %}Analytics - HDPOS Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Advanced Analytics</div>
+    <h1 class="page-title">Performance signals that matter</h1>
+    <p class="page-subtitle">Deep dive into HDPOS POS sales, category strength, and product-level profitability.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Sales movement</div>
+    <div class="fw-bold">{{ "%.1f"|format(sales_growth) }}%</div>
+    <div class="metric-label mt-1">{{ movement_reference_label }}</div>
+  </div>
+</div>
+
+<div class="date-range-container">
+  <form id="date_range_form" method="GET" action="{{ url_for('analytics') }}">
+    <input type="hidden" name="category" value="{{ selected_category }}">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <div>
+        <div class="metric-label mb-2"><i class="fas fa-calendar-alt me-2"></i>Select Date Range</div>
+        <div class="d-flex flex-wrap">
+          <a class="btn btn-outline-primary {% if not selected_range %}active{% endif %}"
+             href="{{ url_for('analytics', category=selected_category) if selected_category else url_for('analytics') }}">
+            <i class="fas fa-layer-group me-1"></i>All Data
+          </a>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'today' %}active{% endif %}" data-range="today">
+            <i class="fas fa-calendar-day me-1"></i>Today
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'yesterday' %}active{% endif %}" data-range="yesterday">
+            <i class="fas fa-calendar-minus me-1"></i>Yesterday
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'last7days' %}active{% endif %}" data-range="last7days">
+            <i class="fas fa-calendar-week me-1"></i>Last 7 Days
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'thismonth' %}active{% endif %}" data-range="thismonth">
+            <i class="fas fa-calendar me-1"></i>This Month
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'lastmonth' %}active{% endif %}" data-range="lastmonth">
+            <i class="fas fa-history me-1"></i>Last Month
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'ytd' %}active{% endif %}" data-range="ytd">
+            <i class="fas fa-chart-line me-1"></i>YTD
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-preset {% if selected_range == 'custom' %}active{% endif %}" data-range="custom">
+            <i class="fas fa-calendar-plus me-1"></i>Custom
+          </button>
+        </div>
+      </div>
+      <div class="text-md-end">
+        <div class="metric-label mb-1">Current period</div>
+        <div class="fw-bold">{{ period_label }}</div>
+      </div>
+    </div>
+
+    <div id="custom_date_range" class="mt-3" style="display: {% if is_custom_range %}block{% else %}none{% endif %};">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label for="start_date" class="form-label">Start Date</label>
+          <input type="date" class="form-control" id="start_date" min="{{ min_date }}" max="{{ max_date }}" value="{{ start_date }}" autocomplete="off">
+        </div>
+        <div class="col-md-5">
+          <label for="end_date" class="form-label">End Date</label>
+          <input type="date" class="form-control" id="end_date" min="{{ min_date }}" max="{{ max_date }}" value="{{ end_date }}" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form method="GET" action="{{ url_for('analytics') }}" class="row g-3 align-items-end mt-3">
+    <input type="hidden" name="start_date" value="{{ start_date }}">
+    <input type="hidden" name="end_date" value="{{ end_date }}">
+    <input type="hidden" name="range" value="{{ selected_range }}">
+    <div class="col-md-8">
+      <label for="analytics_category" class="form-label fw-bold">Category</label>
+      <select class="form-select" id="analytics_category" name="category" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for category in categories %}
+          <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <div class="metric-label mb-1">Current view</div>
+      <div class="fw-bold">{{ category_filter_label }}</div>
+    </div>
+  </form>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-dollar-sign"></i> Total Sales</div>
+      <div class="metric-value">${{ "%.2f"|format(total_sales) }}</div>
+      <div class="metric-small">Revenue for {{ period_day_count }} calendar days</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percentage"></i> Profit Margin</div>
+      <div class="metric-value">{{ "%.1f"|format(profit_margin) }}%</div>
+      <div class="metric-small">Total profit divided by total sales</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-shopping-cart"></i> Total Units</div>
+      <div class="metric-value">{{ total_units|int }}</div>
+      <div class="metric-small">Units sold in current view</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-receipt"></i> Avg Invoice Value</div>
+      <div class="metric-value">${{ "%.2f"|format(avg_transaction_value) }}</div>
+      <div class="metric-small">{{ invoice_count }} invoices in current view</div>
+    </div>
+  </div>
+</div>
+
+<!-- Additional Metrics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-calendar-day"></i> Avg Daily Sales</div>
+      <div class="metric-value">${{ "%.2f"|format(daily_avg_sales) }}</div>
+      <div class="metric-small">Per calendar day in selected period</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-coins"></i> Avg Daily Profit</div>
+      <div class="metric-value">${{ "%.2f"|format(daily_avg_profit) }}</div>
+      <div class="metric-small">Per calendar day in selected period</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-boxes"></i> Avg Daily Units</div>
+      <div class="metric-value">{{ "%.1f"|format(daily_avg_units) }}</div>
+      <div class="metric-small">Per calendar day in selected period</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-chart-line"></i> Profit Movement</div>
+      <div class="metric-value">{{ "%.1f"|format(profit_growth) }}%</div>
+      <div class="metric-small">{{ movement_reference_label }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-lg-6 mb-3 mb-lg-0">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5><i class="fas fa-file-invoice-dollar"></i> Highest Sale Invoice</h5>
+      </div>
+      <div class="card-body">
+        {% if highest_invoice %}
+        <div class="invoice-summary-row">
+          <div class="invoice-summary-details">
+            <h5 class="mb-1">{{ highest_invoice.Invoice_No }}</h5>
+            <p class="text-muted mb-1">{{ highest_invoice.Date.strftime('%Y-%m-%d') if highest_invoice.Date else period_label }}</p>
+            {% if highest_invoice.Unique_Items|int == 1 and top_invoice_products %}
+            <p class="text-muted mb-0">Sold {{ highest_invoice.Units_Sold|int }} units of {{ top_invoice_products[0].Product_Name }}.</p>
+            {% else %}
+            <p class="text-muted mb-0">Sold {{ highest_invoice.Units_Sold|int }} total units from {{ highest_invoice.Unique_Items|int }} product types.</p>
+            {% endif %}
+            {% if highest_invoice.Invoice_No.startswith('AUTO-') or highest_invoice.Invoice_No.startswith('LINE-') %}
+            <p class="text-muted small mb-0">
+              Auto-generated invoice placeholder
+              {% if highest_invoice.Unique_Items|int == 1 %}
+                for a single sales line.
+              {% else %}
+                because this source did not include real POS invoice numbers.
+              {% endif %}
+            </p>
+            {% endif %}
+          </div>
+          <div class="invoice-total">
+            <div class="metric-value">${{ "%.2f"|format(highest_invoice.Total_Sale) }}</div>
+            <div class="metric-small">${{ "%.2f"|format(highest_invoice.Total_Profit) }} profit</div>
+          </div>
+        </div>
+        {% if top_invoice_products %}
+        <hr>
+        <div class="row g-2">
+          {% for item in top_invoice_products %}
+          <div class="col-md-6">
+            <div class="metric-small"><strong>{{ item.Product_Name }}</strong> - ${{ "%.2f"|format(item.Total_Sale) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-muted mb-0">No invoice data available for this period.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5><i class="fas fa-basket-shopping"></i> Last {{ invoice_bundle_lookback_days }}-Day Invoice Bundles</h5>
+      </div>
+      <div class="card-body">
+        {% if invoice_bundle_candidates %}
+          {% for bundle in invoice_bundle_candidates[:3] %}
+          <div class="d-flex justify-content-between align-items-start gap-3 {% if not loop.last %}border-bottom pb-3 mb-3{% endif %}">
+            <div>
+              <h6 class="mb-1">{{ bundle.anchor_product }} + {{ bundle.add_on_product }}</h6>
+              <p class="text-muted mb-0">
+                {{ bundle.pair_count }} / {{ bundle.anchor_invoice_count | default(bundle.pair_count) }} invoices
+                ({{ "%.0f"|format(bundle.confidence_ab * 100) }}% confidence), {{ "%.2f"|format(bundle.lift_ab) }} lift
+              </p>
+            </div>
+            <span class="badge bg-success">{{ bundle.pair_count }} invoices</span>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="text-muted mb-0">No product pair crossed {{ invoice_bundle_threshold }} shared invoices in the last {{ invoice_bundle_lookback_days }} days.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="fas fa-chart-line"></i> Performance Trends</h2>
+    <div class="chart-container">
+      <div id="trend-chart"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-chart-bar"></i> Top Products by Units Sold</h3>
+      <div id="top-products-chart"></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-chart-pie"></i> Category Performance</h3>
+      <div id="category-chart"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-calendar-alt"></i> Daily Invoice Volume</h3>
+      <div id="daily-performance-chart"></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-bolt"></i> Product Analysis: Price vs Profit Margin</h3>
+      <div id="product-scatter-chart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Owner Controls -->
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-gauge-high"></i> Invoice Concentration</h5>
+      </div>
+      <div class="card-body">
+        <div class="metric-value">{{ "%.1f"|format(top_5_invoice_share_pct) }}%</div>
+        <p class="text-muted mb-2">of selected-period revenue came from the top 5 invoices.</p>
+        <p class="mb-0">High-value invoice floor: <strong>${{ "%.2f"|format(high_value_invoice_floor) }}</strong>. There are <strong>{{ high_value_invoice_count }}</strong> invoices at or above that level.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-receipt"></i> Invoice Value Check</h5>
+      </div>
+      <div class="card-body">
+        <div class="metric-value">${{ "%.2f"|format(avg_transaction_value) }}</div>
+        <p class="text-muted mb-2">average invoice value in this view.</p>
+        {% if avg_transaction_value < daily_avg_sales / 10 %}
+        <p class="mb-0">Invoice value is thin relative to daily sales. Prioritize checkout add-ons and bundle prompts.</p>
+        {% else %}
+        <p class="mb-0">Invoice value is healthy. Protect it with bundle candidates and focused shelf placement.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Performance Table -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-layer-group"></i> Category Performance Breakdown</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Category</th>
+                <th>Sales ($)</th>
+                <th>Profit ($)</th>
+                <th>Units Sold</th>
+                <th>Invoices</th>
+                <th>Profit Margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat in category_performance %}
+              <tr>
+                <td><strong>{{ cat.Category }}</strong></td>
+                <td>${{ "%.2f"|format(cat.Total_Sale) }}</td>
+                <td>${{ "%.2f"|format(cat.Total_Profit) }}</td>
+                <td>{{ cat.Units_Sold|int }}</td>
+                <td>{{ cat.Invoice_Count|int }}</td>
+                <td>
+                  {% if cat.Total_Sale > 0 %}
+                    <span class="badge bg-success">{{ "%.1f"|format((cat.Total_Profit/cat.Total_Sale)*100) }}%</span>
+                  {% else %}
+                    <span class="badge bg-secondary">0%</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

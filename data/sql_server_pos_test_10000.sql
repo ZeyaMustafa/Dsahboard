@@ -1,0 +1,224 @@
+/*
+MarketPulse SQL Server POS test database - 10000 invoice line entries
+
+How to create the database and .bak in SSMS:
+1. Create C:\Temp on the SQL Server machine if it does not already exist.
+2. Open this script in SSMS.
+3. Execute it against the server.
+4. The script creates MarketPulsePOSTest10000 with:
+   - 1800 invoice headers in dbo.InvoiceHeader
+   - 10000 invoice line entries in dbo.InvoiceDetail
+   - 24 products in dbo.Products
+5. It writes:
+   C:\Temp\MarketPulsePOSTest10000_10000.bak
+
+The dashboard SQL Server import query is included near the bottom.
+*/
+
+USE master;
+GO
+
+IF DB_ID(N'MarketPulsePOSTest10000') IS NOT NULL
+BEGIN
+    ALTER DATABASE MarketPulsePOSTest10000 SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE MarketPulsePOSTest10000;
+END
+GO
+
+CREATE DATABASE MarketPulsePOSTest10000;
+GO
+
+USE MarketPulsePOSTest10000;
+GO
+
+CREATE TABLE dbo.Products (
+    ProductCode NVARCHAR(30) NOT NULL PRIMARY KEY,
+    ProductName NVARCHAR(120) NOT NULL,
+    CategoryName NVARCHAR(80) NOT NULL,
+    Barcode NVARCHAR(60) NULL,
+    Supplier NVARCHAR(120) NULL,
+    CostPrice DECIMAL(12, 2) NOT NULL,
+    UnitPrice DECIMAL(12, 2) NOT NULL,
+    CurrentStock INT NOT NULL,
+    ReorderLevel INT NOT NULL
+);
+GO
+
+CREATE TABLE dbo.InvoiceHeader (
+    InvoiceID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    InvoiceNo NVARCHAR(40) NOT NULL UNIQUE,
+    InvoiceDate DATETIME2(0) NOT NULL,
+    PaymentMode NVARCHAR(30) NOT NULL,
+    CustomerID NVARCHAR(30) NULL,
+    CashierID NVARCHAR(30) NOT NULL,
+    StoreID NVARCHAR(30) NOT NULL
+);
+GO
+
+CREATE TABLE dbo.InvoiceDetail (
+    InvoiceDetailID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    InvoiceID INT NOT NULL,
+    ProductCode NVARCHAR(30) NOT NULL,
+    Quantity INT NOT NULL,
+    UnitPrice DECIMAL(12, 2) NOT NULL,
+    DiscountAmount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    TaxAmount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    LineTotal DECIMAL(12, 2) NOT NULL,
+    LineProfit DECIMAL(12, 2) NOT NULL,
+    CONSTRAINT FK_InvoiceDetail_Header FOREIGN KEY (InvoiceID) REFERENCES dbo.InvoiceHeader(InvoiceID),
+    CONSTRAINT FK_InvoiceDetail_Product FOREIGN KEY (ProductCode) REFERENCES dbo.Products(ProductCode)
+);
+GO
+
+INSERT INTO dbo.Products
+    (ProductCode, ProductName, CategoryName, Barcode, Supplier, CostPrice, UnitPrice, CurrentStock, ReorderLevel)
+VALUES
+    (N'P001', N'Bananas', N'Produce', N'890000000001', N'Fresh Valley', 0.39, 0.62, 1620, 180),
+    (N'P002', N'Apples', N'Produce', N'890000000002', N'Fresh Valley', 0.78, 1.15, 1350, 160),
+    (N'P003', N'Milk 1L', N'Dairy', N'890000000003', N'Daily Dairy', 1.63, 2.25, 980, 150),
+    (N'P004', N'Bread Loaf', N'Bakery', N'890000000004', N'Bake House', 1.55, 2.10, 860, 140),
+    (N'P005', N'Eggs 12 Pack', N'Dairy', N'890000000005', N'Farm Fresh', 2.85, 3.80, 920, 120),
+    (N'P006', N'Butter', N'Dairy', N'890000000006', N'Daily Dairy', 3.35, 4.40, 760, 100),
+    (N'P007', N'Peanut Butter', N'Pantry', N'890000000007', N'NutriFoods', 3.60, 5.25, 560, 75),
+    (N'P008', N'Strawberry Jam', N'Pantry', N'890000000008', N'NutriFoods', 3.30, 4.75, 580, 75),
+    (N'P009', N'Pasta', N'Pantry', N'890000000009', N'Urban Foods', 1.65, 2.35, 1020, 150),
+    (N'P010', N'Tomato Sauce', N'Pantry', N'890000000010', N'Urban Foods', 2.08, 2.90, 1010, 145),
+    (N'P011', N'Coffee', N'Beverages', N'890000000011', N'Morning Co', 6.10, 8.90, 410, 65),
+    (N'P012', N'Sugar', N'Pantry', N'890000000012', N'Sweet Mill', 1.68, 2.20, 1200, 180),
+    (N'P013', N'Tea Bags', N'Beverages', N'890000000013', N'Morning Co', 3.10, 4.30, 540, 85),
+    (N'P014', N'Biscuits', N'Snacks', N'890000000014', N'Crunchy Bite', 1.82, 2.60, 1420, 190),
+    (N'P015', N'Chips', N'Snacks', N'890000000015', N'Crunchy Bite', 1.99, 2.85, 1380, 185),
+    (N'P016', N'Salsa', N'Snacks', N'890000000016', N'Urban Foods', 2.90, 3.95, 740, 105),
+    (N'P017', N'Rice 5kg', N'Staples', N'890000000017', N'Grain Depot', 10.40, 12.50, 380, 55),
+    (N'P018', N'Cooking Oil', N'Staples', N'890000000018', N'Grain Depot', 7.90, 9.80, 410, 55),
+    (N'P019', N'Chicken Breast', N'Meat', N'890000000019', N'Prime Meat', 5.45, 7.20, 360, 50),
+    (N'P020', N'Yogurt Cups', N'Dairy', N'890000000020', N'Daily Dairy', 2.52, 3.40, 780, 120),
+    (N'P021', N'Orange Juice', N'Beverages', N'890000000021', N'Fresh Valley', 2.80, 4.10, 620, 95),
+    (N'P022', N'Cereal', N'Breakfast', N'890000000022', N'Morning Co', 3.25, 4.95, 640, 90),
+    (N'P023', N'Cheese Slices', N'Dairy', N'890000000023', N'Daily Dairy', 3.90, 5.60, 520, 80),
+    (N'P024', N'Frozen Peas', N'Frozen', N'890000000024', N'Cold Chain', 1.95, 2.95, 700, 100);
+GO
+
+DECLARE @InvoiceCount INT = 1800;
+DECLARE @LineCount INT = 10000;
+DECLARE @StartDate DATE = '2026-04-01';
+
+;WITH InvoiceNumbers AS (
+    SELECT TOP (@InvoiceCount)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects a
+    CROSS JOIN sys.all_objects b
+)
+INSERT INTO dbo.InvoiceHeader
+    (InvoiceNo, InvoiceDate, PaymentMode, CustomerID, CashierID, StoreID)
+SELECT
+    CONCAT(N'INV-', FORMAT(DATEADD(day, (n - 1) % 21, @StartDate), 'yyyyMMdd'), N'-', RIGHT(CONCAT(N'00000', n), 5)),
+    DATEADD(minute, (n * 11) % 780, CAST(DATEADD(day, (n - 1) % 21, @StartDate) AS DATETIME2(0))),
+    CASE n % 4 WHEN 0 THEN N'Cash' WHEN 1 THEN N'Card' WHEN 2 THEN N'UPI' ELSE N'Wallet' END,
+    CONCAT(N'CU', RIGHT(CONCAT(N'0000', (n % 650) + 1), 4)),
+    CONCAT(N'C', RIGHT(CONCAT(N'00', (n % 10) + 1), 2)),
+    CASE WHEN n % 6 = 0 THEN N'STORE-003' WHEN n % 5 = 0 THEN N'STORE-002' ELSE N'STORE-001' END
+FROM InvoiceNumbers;
+GO
+
+DECLARE @LineCount INT = 10000;
+
+;WITH LineNumbers AS (
+    SELECT TOP (@LineCount)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects a
+    CROSS JOIN sys.all_objects b
+),
+LineProducts AS (
+    SELECT
+        n,
+        InvoiceID,
+        CASE
+            WHEN InvoiceID % 10 IN (0, 1) THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P004' WHEN 2 THEN N'P006' WHEN 3 THEN N'P003' WHEN 4 THEN N'P005' ELSE N'P020' END
+            WHEN InvoiceID % 10 = 2 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P009' WHEN 2 THEN N'P010' WHEN 3 THEN N'P018' WHEN 4 THEN N'P012' ELSE N'P024' END
+            WHEN InvoiceID % 10 = 3 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P015' WHEN 2 THEN N'P016' WHEN 3 THEN N'P021' WHEN 4 THEN N'P014' ELSE N'P022' END
+            WHEN InvoiceID % 10 = 4 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P011' WHEN 2 THEN N'P012' WHEN 3 THEN N'P013' WHEN 4 THEN N'P014' ELSE N'P022' END
+            WHEN InvoiceID % 10 = 5 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P007' WHEN 2 THEN N'P008' WHEN 3 THEN N'P004' WHEN 4 THEN N'P003' ELSE N'P021' END
+            WHEN InvoiceID % 10 = 6 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P001' WHEN 2 THEN N'P002' WHEN 3 THEN N'P020' WHEN 4 THEN N'P023' ELSE N'P003' END
+            WHEN InvoiceID % 10 = 7 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P017' WHEN 2 THEN N'P018' WHEN 3 THEN N'P019' WHEN 4 THEN N'P024' ELSE N'P010' END
+            WHEN InvoiceID % 10 = 8 THEN
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P021' WHEN 2 THEN N'P022' WHEN 3 THEN N'P011' WHEN 4 THEN N'P013' ELSE N'P014' END
+            ELSE
+                CASE LineInInvoice % 5 WHEN 1 THEN N'P003' WHEN 2 THEN N'P004' WHEN 3 THEN N'P005' WHEN 4 THEN N'P006' ELSE N'P023' END
+        END AS ProductCode,
+        ((n * 3) % 4) + 1 AS Quantity,
+        CASE WHEN n % 17 = 0 THEN 0.05 WHEN n % 23 = 0 THEN 0.03 ELSE 0 END AS DiscountRate
+    FROM (
+        SELECT
+            n,
+            ((n - 1) % 1800) + 1 AS InvoiceID,
+            ((n - 1) / 1800) + 1 AS LineInInvoice
+        FROM LineNumbers
+    ) numbered
+)
+INSERT INTO dbo.InvoiceDetail
+    (InvoiceID, ProductCode, Quantity, UnitPrice, DiscountAmount, TaxAmount, LineTotal, LineProfit)
+SELECT
+    lp.InvoiceID,
+    lp.ProductCode,
+    lp.Quantity,
+    p.UnitPrice,
+    CAST((p.UnitPrice * lp.Quantity) * lp.DiscountRate AS DECIMAL(12, 2)) AS DiscountAmount,
+    CAST(((p.UnitPrice * lp.Quantity) - ((p.UnitPrice * lp.Quantity) * lp.DiscountRate)) * 0.05 AS DECIMAL(12, 2)) AS TaxAmount,
+    CAST((p.UnitPrice * lp.Quantity) - ((p.UnitPrice * lp.Quantity) * lp.DiscountRate) AS DECIMAL(12, 2)) AS LineTotal,
+    CAST(((p.UnitPrice - p.CostPrice) * lp.Quantity) - ((p.UnitPrice * lp.Quantity) * lp.DiscountRate) AS DECIMAL(12, 2)) AS LineProfit
+FROM LineProducts lp
+JOIN dbo.Products p ON p.ProductCode = lp.ProductCode;
+GO
+
+CREATE INDEX IX_InvoiceHeader_Date ON dbo.InvoiceHeader(InvoiceDate);
+CREATE INDEX IX_InvoiceDetail_InvoiceID ON dbo.InvoiceDetail(InvoiceID);
+CREATE INDEX IX_InvoiceDetail_ProductCode ON dbo.InvoiceDetail(ProductCode);
+GO
+
+SELECT COUNT(*) AS InvoiceCount FROM dbo.InvoiceHeader;
+SELECT COUNT(*) AS InvoiceLineEntryCount FROM dbo.InvoiceDetail;
+GO
+
+-- Dashboard import query:
+SELECT
+    h.InvoiceNo AS Invoice_No,
+    h.InvoiceDate AS Date,
+    d.ProductCode AS Product_ID,
+    p.ProductName AS Product_Name,
+    p.CategoryName AS Category,
+    d.Quantity AS Units_Sold,
+    d.UnitPrice AS Unit_Price,
+    CAST(d.UnitPrice - p.CostPrice AS DECIMAL(12, 2)) AS Profit_Per_Unit,
+    d.LineTotal AS Total_Sale,
+    d.LineProfit AS Total_Profit,
+    d.DiscountAmount AS Discount_Amount,
+    d.TaxAmount AS Tax_Amount,
+    h.PaymentMode AS Payment_Mode,
+    h.CustomerID AS Customer_ID,
+    h.CashierID AS Cashier_ID,
+    h.StoreID AS Store_ID,
+    p.Barcode AS Barcode,
+    p.Supplier AS Supplier,
+    p.CurrentStock AS Current_Stock,
+    p.ReorderLevel AS Reorder_Level
+FROM dbo.InvoiceHeader h
+JOIN dbo.InvoiceDetail d ON d.InvoiceID = h.InvoiceID
+JOIN dbo.Products p ON p.ProductCode = d.ProductCode
+ORDER BY h.InvoiceDate, h.InvoiceNo, d.InvoiceDetailID;
+GO
+
+USE master;
+GO
+
+BACKUP DATABASE MarketPulsePOSTest10000
+TO DISK = N'C:\Temp\MarketPulsePOSTest10000_10000.bak'
+WITH INIT, FORMAT, COMPRESSION, STATS = 10;
+GO

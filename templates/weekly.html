@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Weekly Report - HDPOS Analytics{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Period</div>
+      <div class="metric-value">{{ week_start }} to {{ week_end }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Weekly Sales</div>
+      <div class="metric-value">${{ "%.2f"|format(weekly_sales) }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="metric-card">
+      <div class="metric-label">Weekly Profit</div>
+      <div class="metric-value">${{ "%.2f"|format(weekly_profit) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Weekly Trend</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ weekly_trend }}" class="img-fluid" alt="Weekly Trend">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Top Products</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ top_weekly }}" class="img-fluid" alt="Top Products Weekly">
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2>Category Analysis</h2>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ cat_weekly }}" class="img-fluid" alt="Category Analysis Weekly">
+    </div>
+  </div>
+</div>
+{% endblock %}

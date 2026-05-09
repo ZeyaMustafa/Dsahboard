@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Forecast - SuperMarket Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Forecast</div>
+    <h1 class="page-title">Next-week demand outlook</h1>
+    <p class="page-subtitle">Predictive sales and profit planning for the next 7 days.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Projected sales</div>
+    <div class="fw-bold">${{ "%.2f"|format(forecast_sales_total) }}</div>
+  </div>
+</div>
+
+<!-- Forecast Metrics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-chart-line"></i> Next-Day Sales Forecast</div>
+      <div class="metric-value">${{ "%.2f"|format(next_day_sales_forecast) }}</div>
+      <div class="metric-small">Trend, momentum, and weekday seasonality</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percentage"></i> Sales Growth Trend</div>
+      <div class="metric-value">
+        {% if sales_growth >= 0 %}
+          <span class="text-success">+{{ "%.1f"|format(sales_growth) }}%</span>
+        {% else %}
+          <span class="text-danger">{{ "%.1f"|format(sales_growth) }}%</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-chart-line"></i> Next-Day Profit Forecast</div>
+      <div class="metric-value">${{ "%.2f"|format(next_day_profit_forecast) }}</div>
+      <div class="metric-small">Trend, momentum, and weekday seasonality</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percentage"></i> Profit Growth Trend</div>
+      <div class="metric-value">
+        {% if profit_growth >= 0 %}
+          <span class="text-success">+{{ "%.1f"|format(profit_growth) }}%</span>
+        {% else %}
+          <span class="text-danger">{{ "%.1f"|format(profit_growth) }}%</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if ai_decision and ai_decision.forecast_actions %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-wand-magic-sparkles"></i> AI Forecast Guidance</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for item in ai_decision.forecast_actions %}
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded h-100">
+              <h6>{{ item.title }}</h6>
+              <p class="mb-1">{{ item.suggested_action }}</p>
+              <div class="text-muted small">{{ item.confidence }}% confidence</div>
+            </div>
+          </div>
+          {% endfor %}
+          {% for action in ai_decision.product_actions[:2] %}
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded h-100">
+              <h6>{{ action.Product_Name }}</h6>
+              <p class="mb-1">{{ action.suggested_action }}</p>
+              <div class="text-muted small">{{ action.action_type }} · {{ "%.0f"|format(action.confidence) }}% confidence</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="text-muted small mb-0 mt-3">{{ ai_decision.rendering_note }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Charts Section -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="fas fa-chart-line"></i> Historical Trends & Forecast</h2>
+    <div class="chart-container">
+      <div id="forecast-chart"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-chart-bar"></i> Historical Sales Trend</h3>
+      <div id="trend-chart"></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="chart-container">
+      <h3><i class="fas fa-chart-pie"></i> Category Performance</h3>
+      <div id="category-chart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Owner Operating Plan -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-clipboard-check"></i> Owner Operating Plan</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+              <h6><i class="fas fa-scale-balanced text-primary"></i> Demand Posture</h6>
+              <p class="mb-0">
+                Forecast sales are
+                <strong>{{ "%.1f"|format(forecast_owner_plan.sales_delta_pct) }}%</strong>
+                versus the current daily pace. Adjust staffing and ordering to match the expected week.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+              <h6><i class="fas fa-boxes-stacked text-success"></i> Stock Focus</h6>
+              <p class="mb-0">
+                {% if forecast_owner_plan.stock_action %}
+                  {{ forecast_owner_plan.stock_action.Product_Name }}: {{ forecast_owner_plan.stock_action.suggested_action }}
+                {% else %}
+                  No urgent stock action found. Keep replenishment aligned with forecast demand.
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+              <h6><i class="fas fa-tags text-info"></i> Margin Focus</h6>
+              <p class="mb-0">
+                {% if forecast_owner_plan.margin_action %}
+                  {{ forecast_owner_plan.margin_action.Product_Name }}: {{ forecast_owner_plan.margin_action.suggested_action }}
+                {% else %}
+                  Profit outlook is {{ "%.1f"|format(forecast_owner_plan.profit_delta_pct) }}% versus the current pace. Protect high-margin products.
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

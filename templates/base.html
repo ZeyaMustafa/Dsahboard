@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}HDPOS Analytics{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef3ee;
+      --bg-warm: #f6efe3;
+      --bg-cool: #e7f0f2;
+      --surface: rgba(255, 253, 247, 0.88);
+      --surface-solid: #fffdf7;
+      --surface-soft: #ede8dc;
+      --surface-tint: #e5f0ea;
+      --border: rgba(214, 207, 192, 0.78);
+      --text: #22201c;
+      --muted: #736d62;
+      --brand: #2f6f5e;
+      --brand-dark: #204f43;
+      --accent: #c9823a;
+      --plum: #6b536f;
+      --rose: #b85c58;
+      --blue: #4e6f8f;
+      --danger-soft: #f9e8e5;
+      --success-soft: #e8f4ed;
+      --shadow: 0 18px 45px rgba(34, 32, 28, 0.11);
+    }
+    * { letter-spacing: 0; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(201, 130, 58, 0.16), transparent 28rem),
+        radial-gradient(circle at 88% 12%, rgba(78, 111, 143, 0.15), transparent 30rem),
+        linear-gradient(135deg, var(--bg-warm) 0%, var(--bg) 45%, var(--bg-cool) 100%);
+      background-attachment: scroll;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { text-decoration: none; }
+    .app-shell {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+      isolation: isolate;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: rgba(255, 253, 247, 0.78);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--brand), var(--blue));
+      box-shadow: 0 10px 22px rgba(47, 111, 94, 0.22);
+      flex: 0 0 auto;
+    }
+    .brand-title {
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    .brand-subtitle {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .nav-section-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 0.75rem 0 0.4rem;
+    }
+    .side-nav {
+      display: grid;
+      gap: 0.25rem;
+    }
+    .side-nav .nav-link {
+      color: #3f4a46;
+      border-radius: 8px;
+      padding: 0.72rem 0.82rem;
+      font-weight: 650;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 42px;
+    }
+    .side-nav .nav-link i {
+      width: 18px;
+      text-align: center;
+      color: #7a8581;
+    }
+    .side-nav .nav-link:hover {
+      background: var(--surface-soft);
+      color: var(--brand-dark);
+    }
+    .side-nav .nav-link.active {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(23, 107, 91, 0.18);
+    }
+    .side-nav .nav-link.active i { color: #fff; }
+    .sidebar-account {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .sidebar-account .account-email {
+      color: var(--text);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .topbar {
+      display: none;
+      background: rgba(255, 253, 247, 0.82);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1rem;
+    }
+    .main-panel {
+      min-width: 0;
+      padding: 1.75rem 2.2rem 2rem;
+      background:
+        linear-gradient(180deg, rgba(255, 253, 247, 0.18), rgba(255, 253, 247, 0)),
+        transparent;
+    }
+    .content-wrap {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    .page-header {
+      background: rgba(255, 254, 250, 0.72);
+      border: 1px solid rgba(227, 222, 210, 0.85);
+      border-radius: 12px;
+      padding: 1.15rem;
+      box-shadow: 0 10px 30px rgba(34, 32, 28, 0.04);
+      animation: riseIn 520ms ease both;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .page-kicker {
+      color: var(--brand);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .page-title {
+      font-size: clamp(1.5rem, 2vw, 2.2rem);
+      font-weight: 850;
+      margin: 0;
+      color: var(--text);
+    }
+    .page-subtitle {
+      margin: 0.3rem 0 0;
+      color: var(--muted);
+    }
+    .metric-card { 
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      box-shadow: 0 12px 32px rgba(34, 32, 28, 0.06);
+      margin-bottom: 1.5rem;
+      animation: riseIn 560ms ease both;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .metric-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(47, 111, 94, 0.26);
+      box-shadow: var(--shadow);
+    }
+    .metric-card.metric-card-compact {
+      min-height: 84px;
+      padding: 1rem 1.1rem;
+    }
+    .metric-card.metric-card-compact .metric-value {
+      font-size: clamp(1rem, 1.3vw, 1.2rem);
+      margin-bottom: 0.35rem;
+    }
+    .metric-card.metric-card-compact .metric-small {
+      margin-top: 0;
+    }
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--brand);
+    }
+    .row > div:nth-child(2n) > .metric-card::before { background: var(--accent); }
+    .row > div:nth-child(3n) > .metric-card::before { background: var(--blue); }
+    .row > div:nth-child(4n) > .metric-card::before { background: var(--plum); }
+    .metric-value {
+      font-size: clamp(1.35rem, 1.8vw, 2rem);
+      font-weight: 850;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .invoice-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .invoice-summary-details {
+      min-width: 0;
+    }
+    .invoice-total {
+      flex: 0 0 auto;
+      min-width: max-content;
+      text-align: right;
+    }
+    .invoice-total .metric-value {
+      white-space: nowrap;
+      font-size: clamp(1.55rem, 2.8vw, 2.35rem);
+    }
+    @media (max-width: 575.98px) {
+      .invoice-summary-row {
+        flex-direction: column;
+      }
+      .invoice-total {
+        text-align: left;
+      }
+    }
+    .metric-label {
+      font-size: 0.86rem;
+      color: var(--muted);
+      font-weight: 750;
+      margin-bottom: 0.55rem;
+    }
+    .metric-small {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    .chart-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 12px 32px rgba(34, 32, 28, 0.06);
+      margin-bottom: 2rem;
+      min-height: 380px;
+      animation: riseIn 640ms ease both;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .card-body > .chart-container {
+      min-height: 280px;
+      padding: 0.75rem;
+      box-shadow: none;
+      background: rgba(255, 253, 247, 0.55);
+    }
+    .footer {
+      margin-top: 2rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .date-range-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 12px 32px rgba(34, 32, 28, 0.06);
+      margin-bottom: 1.25rem;
+      animation: riseIn 460ms ease both;
+    }
+    .btn-preset {
+      margin: 0.2rem;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      font-weight: 700;
+      transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+    }
+    .btn-preset:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(34, 32, 28, 0.08);
+    }
+    .btn-preset.active {
+      background-color: var(--brand);
+      border-color: var(--brand);
+      color: white;
+    }
+    .tab-content {
+      padding: 0;
+      border-top: 0;
+    }
+    .tab-pane {
+      padding-top: 1rem;
+    }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0 0 0.85rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .section-title::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+    .owner-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      height: 100%;
+      box-shadow: 0 12px 32px rgba(34, 32, 28, 0.06);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      animation: riseIn 600ms ease both;
+    }
+    .owner-card:hover {
+      transform: translateY(-2px);
+      border-color: #c8d6cf;
+      box-shadow: var(--shadow);
+    }
+    .owner-card .icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--surface-tint);
+      color: var(--brand);
+      margin-bottom: 0.9rem;
+    }
+    .owner-card h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin: 0 0 0.35rem;
+    }
+    .owner-card p {
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.92rem;
+    }
+    .btn-primary, .btn-success {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      border-color: var(--brand);
+      font-weight: 750;
+      border-radius: 8px;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .btn {
+      transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(34, 32, 28, 0.10);
+    }
+    .btn-primary:hover, .btn-success:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+    .btn-outline-primary {
+      color: var(--brand);
+      border-color: #c8d8d3;
+    }
+    .btn-outline-primary:hover {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 12px 32px rgba(34, 32, 28, 0.06);
+      animation: riseIn 560ms ease both;
+    }
+    .card-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-weight: 800;
+    }
+    .table {
+      --bs-table-hover-bg: #f3f7f5;
+    }
+    .alert {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .form-control, .form-select {
+      border-color: var(--border);
+      border-radius: 10px;
+      background: #fffdf8;
+      color: var(--text);
+      min-height: 42px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 0.2rem rgba(47, 111, 94, 0.14);
+    }
+    .badge {
+      border-radius: 999px;
+      padding: 0.45rem 0.65rem;
+      font-weight: 750;
+    }
+    .bg-light {
+      background-color: var(--surface-tint) !important;
+    }
+    .text-primary { color: var(--brand) !important; }
+    .text-info { color: var(--blue) !important; }
+    .text-success { color: var(--brand) !important; }
+    .text-warning { color: var(--accent) !important; }
+    .text-danger { color: var(--rose) !important; }
+    .bg-primary { background-color: var(--brand) !important; }
+    .bg-success { background-color: var(--brand) !important; }
+    .bg-info { background-color: var(--blue) !important; }
+    .bg-warning { background-color: var(--accent) !important; }
+    .bg-danger { background-color: var(--rose) !important; }
+    .table > :not(caption) > * > * {
+      background-color: transparent;
+      border-bottom-color: var(--border);
+      padding: 0.85rem;
+    }
+    .table-light {
+      --bs-table-bg: #f4f0e7;
+      --bs-table-color: var(--text);
+    }
+    .auth-card {
+      max-width: 460px;
+      margin: 3rem auto;
+    }
+    .row > div:nth-child(1) .metric-card,
+    .row > div:nth-child(1) .owner-card,
+    .row > div:nth-child(1) .chart-container,
+    .row > div:nth-child(1) .card { animation-delay: 40ms; }
+    .row > div:nth-child(2) .metric-card,
+    .row > div:nth-child(2) .owner-card,
+    .row > div:nth-child(2) .chart-container,
+    .row > div:nth-child(2) .card { animation-delay: 110ms; }
+    .row > div:nth-child(3) .metric-card,
+    .row > div:nth-child(3) .owner-card,
+    .row > div:nth-child(3) .chart-container,
+    .row > div:nth-child(3) .card { animation-delay: 180ms; }
+    .row > div:nth-child(4) .metric-card,
+    .row > div:nth-child(4) .owner-card,
+    .row > div:nth-child(4) .chart-container,
+    .row > div:nth-child(4) .card { animation-delay: 250ms; }
+    .side-nav .nav-link {
+      transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+    .side-nav .nav-link:hover {
+      transform: translateX(3px);
+    }
+    @keyframes riseIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+    @media (max-width: 991.98px) {
+      .app-shell { display: block; }
+      .sidebar { display: none; }
+      .topbar { display: block; position: sticky; top: 0; z-index: 1020; }
+      .main-panel { padding: 1rem; }
+      .mobile-nav-panel {
+        margin-top: 0.8rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .mobile-nav-panel .nav-link {
+        color: var(--text);
+        padding: 0.65rem 0.75rem;
+        border-radius: 8px;
+      }
+      .mobile-nav-panel .nav-link.active {
+        color: white;
+        background: var(--brand);
+      }
+    }
+  </style>
+  <link href="{{ url_for('static', filename='css/dashboard-redesign.css') }}" rel="stylesheet">
+  <style>
+    /* Page loading progress bar */
+    #page-progress {
+      position: fixed; top: 0; left: 0; width: 0; height: 3px; z-index: 9999;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+      transition: width 0.3s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+    #page-progress.loading { opacity: 1; width: 70%; }
+    #page-progress.done    { opacity: 0; width: 100%; }
+    /* SQL Server loading banner */
+    .sql-loading-banner {
+      display: none;
+      background: linear-gradient(90deg, rgba(47,111,94,0.1), rgba(201,130,58,0.1));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .sql-loading-banner.visible { display: flex; }
+    .sql-spinner {
+      width: 16px; height: 16px; border: 2px solid var(--border);
+      border-top-color: var(--brand); border-radius: 50%;
+      animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="page-progress"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="d-flex align-items-center gap-3" href="{{ url_for('index') }}">
+        <span class="brand-mark"><i class="fas fa-store"></i></span>
+        <span>
+          <span class="brand-title d-block">HDPOS Analytics</span>
+          <span class="brand-subtitle">Owner dashboard</span>
+        </span>
+      </a>
+
+      <div class="sidebar-tools">
+        <button class="shell-tool" type="button" data-command-open aria-label="Open command search" title="Search">
+          <i class="fas fa-magnifying-glass"></i>
+          <span>Search</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+        <button class="shell-tool" type="button" data-theme-toggle aria-label="Toggle dark mode" title="Theme">
+          <i class="fas fa-moon"></i>
+          <span>Theme</span>
+        </button>
+        <button class="shell-tool shell-tool-icon" type="button" data-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">
+          <i class="fas fa-angles-left"></i>
+        </button>
+      </div>
+
+      <nav class="side-nav">
+        <div class="nav-section-label">Daily Control</div>
+        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}"><i class="fas fa-gauge-high"></i>Overview</a>
+        <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}"><i class="fas fa-chart-bar"></i>Analytics</a>
+        <a class="nav-link {% if request.endpoint == 'forecast' %}active{% endif %}" href="{{ url_for('forecast') }}"><i class="fas fa-chart-line"></i>Forecast</a>
+        <a class="nav-link {% if request.endpoint == 'insights' %}active{% endif %}" href="{{ url_for('insights') }}"><i class="fas fa-lightbulb"></i>Insights</a>
+
+        <div class="nav-section-label">Operations</div>
+        <a class="nav-link {% if request.endpoint == 'inventory' %}active{% endif %}" href="{{ url_for('inventory') }}"><i class="fas fa-boxes-stacked"></i>Inventory</a>
+        <a class="nav-link {% if request.endpoint == 'waste' %}active{% endif %}" href="{{ url_for('waste') }}"><i class="fas fa-recycle"></i>Waste</a>
+        <a class="nav-link {% if request.endpoint == 'pricing' %}active{% endif %}" href="{{ url_for('pricing') }}"><i class="fas fa-tags"></i>Pricing</a>
+        <a class="nav-link {% if request.endpoint == 'cross_sell' %}active{% endif %}" href="{{ url_for('cross_sell') }}"><i class="fas fa-basket-shopping"></i>Cross-Sell</a>
+        <a class="nav-link {% if request.endpoint == 'integration' %}active{% endif %}" href="{{ url_for('integration') }}"><i class="fas fa-plug"></i>Integration</a>
+        <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}"><i class="fas fa-circle-info"></i>About</a>
+      </nav>
+
+      <div class="sidebar-account">
+        {% if current_user.is_authenticated %}
+          <div class="account-email">{{ current_user.email }}</div>
+          <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a class="btn btn-primary btn-sm w-100 mb-2" href="{{ url_for('login') }}">Login</a>
+          <a class="btn btn-outline-primary btn-sm w-100" href="{{ url_for('signup') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="topbar">
+      <div class="d-flex align-items-center justify-content-between">
+        <a class="d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+          <span class="brand-mark"><i class="fas fa-store"></i></span>
+          <span class="brand-title">HDPOS Analytics</span>
+        </a>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" type="button" data-command-open aria-label="Open command search">
+            <i class="fas fa-magnifying-glass"></i>
+          </button>
+          <button class="btn btn-outline-primary" type="button" data-theme-toggle aria-label="Toggle dark mode">
+            <i class="fas fa-moon"></i>
+          </button>
+          <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav" aria-expanded="false" aria-controls="mobileNav">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+      <div class="collapse mobile-nav-panel" id="mobileNav">
+        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Overview</a>
+        <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}"><i class="fas fa-chart-bar me-2"></i>Analytics</a>
+        <a class="nav-link {% if request.endpoint == 'forecast' %}active{% endif %}" href="{{ url_for('forecast') }}">Forecast</a>
+        <a class="nav-link {% if request.endpoint == 'insights' %}active{% endif %}" href="{{ url_for('insights') }}">Insights</a>
+        <a class="nav-link {% if request.endpoint == 'inventory' %}active{% endif %}" href="{{ url_for('inventory') }}">Inventory</a>
+        <a class="nav-link {% if request.endpoint == 'waste' %}active{% endif %}" href="{{ url_for('waste') }}">Waste</a>
+        <a class="nav-link {% if request.endpoint == 'pricing' %}active{% endif %}" href="{{ url_for('pricing') }}">Pricing</a>
+        <a class="nav-link {% if request.endpoint == 'cross_sell' %}active{% endif %}" href="{{ url_for('cross_sell') }}">Cross-Sell</a>
+        <a class="nav-link {% if request.endpoint == 'integration' %}active{% endif %}" href="{{ url_for('integration') }}"><i class="fas fa-plug me-2"></i>Integration</a>
+        <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+        {% if current_user.is_authenticated %}
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+          <a class="nav-link" href="{{ url_for('signup') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <main class="main-panel">
+      <div class="content-wrap">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category in ['success','danger','warning','info','primary'] else 'warning' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if data_source_live_sql %}
+        <div class="sql-loading-banner" id="sqlLoadingBanner">
+          <div class="sql-spinner"></div>
+          <span>Fetching live data from SQL Server&hellip; this may take a few seconds.</span>
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+
+        <div class="footer">
+          &copy; {{ current_year }} HDPOS Analytics. Built for clearer retail decisions.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal fade command-modal" id="commandPalette" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="command-search">
+          <i class="fas fa-magnifying-glass"></i>
+          <input id="commandSearch" type="search" autocomplete="off" placeholder="Search pages and actions">
+        </div>
+        <div class="command-list" id="commandList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script src="{{ url_for('plotly_js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/dashboard-production.js') }}" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const startDateInput = document.getElementById('start_date');
+      const endDateInput = document.getElementById('end_date');
+      const customDateRange = document.getElementById('custom_date_range');
+      const minDateValue = "{{ min_date | default('', true) }}";
+      const maxDateValue = "{{ max_date | default('', true) }}";
+
+      const parseDate = (value) => value ? new Date(`${value}T00:00:00`) : null;
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      const clampDate = (date) => {
+        const minDate = parseDate(minDateValue);
+        const maxDate = parseDate(maxDateValue);
+        if (minDate && date < minDate) return minDate;
+        if (maxDate && date > maxDate) return maxDate;
+        return date;
+      };
+      const setRangeAndReload = (startDate, endDate) => {
+        const start = clampDate(startDate);
+        const end = clampDate(endDate);
+        const url = new URL(window.location.href);
+        url.searchParams.set('start_date', formatDate(start));
+        url.searchParams.set('end_date', formatDate(end));
+        url.searchParams.set('range', 'custom');
+        window.location.href = url.toString();
+      };
+
+      const presetButtons = document.querySelectorAll('.btn-preset');
+      presetButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          presetButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          
+          const range = this.getAttribute('data-range');
+          if (range === 'custom') {
+            if (customDateRange) {
+              customDateRange.style.display = 'block';
+            }
+            return;
+          }
+
+          const anchorDate = parseDate(maxDateValue) || new Date();
+          let startDate, endDate;
+          
+          switch(range) {
+            case 'today':
+              startDate = new Date(anchorDate);
+              endDate = new Date(anchorDate);
+              break;
+            case 'yesterday':
+              const yesterday = new Date(anchorDate);
+              yesterday.setDate(yesterday.getDate() - 1);
+              startDate = yesterday;
+              endDate = new Date(yesterday);
+              break;
+            case 'last7days':
+              startDate = new Date(anchorDate);
+              startDate.setDate(anchorDate.getDate() - 6);
+              endDate = new Date(anchorDate);
+              break;
+            case 'thismonth':
+              startDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+              endDate = new Date(anchorDate);
+              break;
+            case 'lastmonth':
+              startDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth() - 1, 1);
+              endDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 0);
+              break;
+            case 'ytd':
+              startDate = new Date(anchorDate.getFullYear(), 0, 1);
+              endDate = new Date(anchorDate);
+              break;
+          }
+          
+          if (startDate && endDate) {
+            const start = clampDate(startDate);
+            const end = clampDate(endDate);
+            const url = new URL(window.location.href);
+            url.searchParams.set('start_date', formatDate(start));
+            url.searchParams.set('end_date', formatDate(end));
+            url.searchParams.set('range', range);
+            window.location.href = url.toString();
+          }
+        });
+      });
+      
+      const form = document.getElementById('date_range_form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const startDate = parseDate(startDateInput ? startDateInput.value : '');
+          const endDate = parseDate(endDateInput ? endDateInput.value : '');
+          if (startDate && endDate) {
+            setRangeAndReload(startDate, endDate);
+          }
+        });
+      }
+      
+      const chartPayloads = {};
+      {% if request.endpoint in ['index', 'analytics', 'forecast', 'insights'] %}
+      chartPayloads['trend-chart'] = {{ trend_plot | default(none) | tojson }};
+      chartPayloads['category-chart'] = {{ category_plot | default(none) | tojson }};
+      {% endif %}
+      {% if request.endpoint in ['index', 'analytics'] %}
+      chartPayloads['top-products-chart'] = {{ top_products_plot | default(none) | tojson }};
+      {% endif %}
+      {% if request.endpoint == 'index' %}
+      chartPayloads['worst-products-chart'] = {{ worst_products_plot | default(none) | tojson }};
+      {% endif %}
+      {% if request.endpoint in ['index', 'forecast'] %}
+      chartPayloads['forecast-chart'] = {{ forecast_plot | default(none) | tojson }};
+      {% endif %}
+      {% if request.endpoint == 'analytics' %}
+      chartPayloads['daily-performance-chart'] = {{ daily_performance_plot | default(none) | tojson }};
+      chartPayloads['product-scatter-chart'] = {{ product_scatter_plot | default(none) | tojson }};
+      {% endif %}
+      const renderedCharts = new Set();
+      const renderPlotlyChart = (divId, jsonData) => {
+        const plotDiv = document.getElementById(divId);
+        if (plotDiv && jsonData && window.Plotly && !renderedCharts.has(divId)) {
+          const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+          Plotly.newPlot(plotDiv, parsed.data, parsed.layout, {
+            responsive: true,
+            displayModeBar: false
+          });
+          renderedCharts.add(divId);
+          if (window.HDPOSSyncCharts) {
+            window.HDPOSSyncCharts();
+          }
+        }
+      };
+
+      const scheduleChart = (id) => renderPlotlyChart(id, chartPayloads[id]);
+      const chartIds = Object.keys(chartPayloads).filter((id) => document.getElementById(id) && chartPayloads[id]);
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              scheduleChart(entry.target.id);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { rootMargin: '220px 0px' });
+        chartIds.forEach((id) => observer.observe(document.getElementById(id)));
+      } else {
+        chartIds.forEach(scheduleChart);
+      }
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+  <script>
+    // Page navigation progress bar
+    (function () {
+      const bar = document.getElementById('page-progress');
+      if (!bar) return;
+      window.addEventListener('pageshow', function () {
+        bar.classList.remove('loading');
+        bar.classList.add('done');
+        setTimeout(function () { bar.classList.remove('done'); bar.style.width = ''; }, 500);
+      });
+      document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript') || link.target === '_blank') return;
+        if (link.hostname && link.hostname !== window.location.hostname) return;
+        bar.style.width = '0';
+        bar.classList.remove('done');
+        bar.classList.add('loading');
+      });
+    })();
+  </script>
+</body>
+</html>

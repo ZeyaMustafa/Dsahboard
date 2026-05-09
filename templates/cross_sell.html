@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Cross-Selling Opportunities - SuperMarket Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Cross-Sell</div>
+    <h1 class="page-title">Bundle and promotion opportunities</h1>
+    <p class="page-subtitle">Discover product associations for bundling and promotional strategies.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Associations</div>
+    <div class="fw-bold">{{ cross_sell_data | length }}</div>
+  </div>
+</div>
+
+<!-- Cross-Sell Metrics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-random"></i> Strong Associations Found</div>
+      <div class="metric-value">{{ cross_sell_data | length }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percentage"></i> Avg Confidence Level</div>
+      <div class="metric-value">
+        {% if cross_sell_data | length > 0 %}
+          {{ (cross_sell_data | map(attribute='confidence_ab') | list | sum / cross_sell_data | length) | round(2) }}
+        {% else %}
+          0
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-chart-line"></i> Avg Lift Score</div>
+      <div class="metric-value">
+        {% if cross_sell_data | length > 0 %}
+          {{ (cross_sell_data | map(attribute='lift_ab') | list | sum / cross_sell_data | length) | round(2) }}
+        {% else %}
+          0
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-bolt"></i> High Impact Opportunities</div>
+      <div class="metric-value text-success">
+        {{ cross_sell_data | selectattr('lift_ab', 'greaterthan', 2.0) | list | length }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cross-Sell Table -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-table"></i> Product Association Analysis</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Product A</th>
+                <th>Product B</th>
+                <th>Support</th>
+                <th>Confidence (A to B)</th>
+                <th>Lift</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if cross_sell_data %}
+              {% for item in cross_sell_data %}
+              <tr>
+                <td><strong>{{ item.product_a }}</strong></td>
+                <td><strong>{{ item.product_b }}</strong></td>
+                <td>{{ "%.3f"|format(item.support) }}</td>
+                <td>{{ "%.3f"|format(item.confidence_ab) }}</td>
+                <td>
+                  {% if item.lift_ab >= 2.0 %}
+                    <span class="badge bg-success">{{ "%.2f"|format(item.lift_ab) }}</span>
+                  {% elif item.lift_ab >= 1.5 %}
+                    <span class="badge bg-warning text-dark">{{ "%.2f"|format(item.lift_ab) }}</span>
+                  {% else %}
+                    <span class="badge bg-info">{{ "%.2f"|format(item.lift_ab) }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary">{{ item.recommendation }}</button>
+                </td>
+              </tr>
+              {% endfor %}
+              {% else %}
+              <tr>
+                <td colspan="6" class="text-muted">
+                  No reliable product-pair associations found. The current invoice data does not contain multi-product baskets for this period.
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bundle Launch Plan -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-rocket"></i> Bundle Launch Plan</h5>
+      </div>
+      <div class="card-body">
+        {% if cross_sell_owner_summary.top_bundle %}
+        <div class="row g-3">
+          <div class="col-lg-4">
+            <div class="bg-light p-3 rounded h-100">
+              <div class="metric-label"><i class="fas fa-basket-shopping"></i> First Bundle to Launch</div>
+              <div class="metric-value">{{ cross_sell_owner_summary.top_bundle.anchor_product }}</div>
+              <div class="metric-small">with {{ cross_sell_owner_summary.top_bundle.add_on_product }}</div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="bg-light p-3 rounded h-100">
+              <div class="metric-label"><i class="fas fa-receipt"></i> Top 3 Shared Invoices</div>
+              <div class="metric-value">{{ cross_sell_owner_summary.shared_invoice_total }}</div>
+              <div class="metric-small">invoice appearances across launch candidates</div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="bg-light p-3 rounded h-100">
+              <div class="metric-label"><i class="fas fa-check-circle"></i> High Confidence Pairs</div>
+              <div class="metric-value">{{ cross_sell_owner_summary.high_confidence_count }}</div>
+              <div class="metric-small">pairs above 50% confidence</div>
+            </div>
+          </div>
+          <div class="col-12">
+            {% for item in cross_sell_owner_summary.top_candidates %}
+            <div class="d-flex justify-content-between align-items-start gap-3 border-bottom pb-3 mb-3">
+              <div>
+                <h6 class="mb-1">{{ item.anchor_product }} + {{ item.add_on_product }}</h6>
+                <p class="text-muted mb-0">Place together at checkout or the aisle end-cap. Start with a small add-on discount and measure invoice attachment.</p>
+              </div>
+              <span class="badge bg-success">{{ item.pair_count|default(0) }} invoices</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No launch-ready bundle found for this period.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Any cross-sell specific JavaScript can go here
+  });
+</script>
+{% endblock %}

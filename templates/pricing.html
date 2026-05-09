@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Pricing Optimization - SuperMarket Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Pricing</div>
+    <h1 class="page-title">Margin and volume opportunities</h1>
+    <p class="page-subtitle">Identify pricing optimization opportunities and volume strategies.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Products analyzed</div>
+    <div class="fw-bold">{{ pricing_summary.products_analyzed }}</div>
+  </div>
+</div>
+
+<!-- Pricing Metrics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-arrow-up"></i> Actionable Opportunities</div>
+      <div class="metric-value text-success">
+        {{ pricing_summary.actionable_count }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-arrow-down"></i> Volume Opportunity Items</div>
+      <div class="metric-value text-info">
+        {{ pricing_summary.bundle_count }}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-percentage"></i> Avg Profit Margin</div>
+      <div class="metric-value">
+        {{ "%.1f"|format(pricing_summary.avg_profit_margin) }}%
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card">
+      <div class="metric-label"><i class="fas fa-chart-line"></i> Revenue Impact Potential</div>
+      <div class="metric-value text-primary">
+        ${{ "%.0f"|format(pricing_summary.revenue_impact) }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if ai_decision and ai_decision.product_actions %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-wand-magic-sparkles"></i> AI Seller Priority</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for action in ai_decision.product_actions[:3] %}
+          <div class="col-md-4">
+            <div class="bg-light p-3 rounded h-100">
+              <div class="metric-label mb-1">{{ action.action_type }} · {{ "%.0f"|format(action.confidence) }}% confidence</div>
+              <h6 class="mb-2">{{ action.Product_Name }}</h6>
+              <p class="mb-0">{{ action.suggested_action }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="text-muted small mb-0 mt-3">{{ ai_decision.rendering_note }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pricing Optimization Table -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-table"></i> Pricing Analysis Details <span class="text-muted small">({{ pricing_summary.products_analyzed }} products)</span></h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Profit Margin</th>
+                <th>Monthly Units Sold</th>
+                <th>Opportunity Type</th>
+                <th>Suggested Action</th>
+                <th>AI Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in pricing_data %}
+              <tr>
+                <td><strong>{{ item.Product_Name }}</strong></td>
+                <td>{{ item.Category }}</td>
+                <td>${{ "%.2f"|format(item.Unit_Price) }}</td>
+                <td>{{ "%.1f"|format(item.profit_margin_pct) }}%</td>
+                <td>{{ item.Units_Sold | round(0) }}</td>
+                <td>
+                  {% if item.pricing_opportunity == 'price_increase' %}
+                    <span class="badge bg-success">{{ item.opportunity_label }}</span>
+                  {% elif item.pricing_opportunity == 'bundle_margin' %}
+                    <span class="badge bg-info">{{ item.opportunity_label }}</span>
+                  {% elif item.pricing_opportunity == 'margin_review' %}
+                    <span class="badge bg-warning text-dark">{{ item.opportunity_label }}</span>
+                  {% elif item.pricing_opportunity == 'visibility_push' %}
+                    <span class="badge bg-primary">{{ item.opportunity_label }}</span>
+                  {% elif item.pricing_opportunity == 'protect_price' %}
+                    <span class="badge bg-warning text-dark">{{ item.opportunity_label }}</span>
+                  {% elif item.pricing_opportunity == 'reduce_or_replace' %}
+                    <span class="badge bg-danger">{{ item.opportunity_label }}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ item.opportunity_label }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary">{{ item.seller_suggested_action or item.suggested_action }}</button>
+                </td>
+                <td>
+                  <span class="badge bg-primary">{{ item.seller_action_type }}</span>
+                  <div class="fw-bold mt-1">{{ "%.0f"|format(item.seller_priority_score or 0) }}% priority</div>
+                  <div class="text-muted small">{{ "%.0f"|format(item.seller_confidence or 0) }}% confidence</div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Owner Pricing Plan -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-clipboard-list"></i> Owner Pricing Plan</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-lg-5">
+            <h6 class="mb-3">Action Mix</h6>
+            {% for item in pricing_owner_summary.action_mix %}
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+              <div>
+                <strong>{{ item.label }}</strong>
+                <div class="text-muted small">${{ "%.0f"|format(item.sales) }} sales attached</div>
+              </div>
+              <span class="badge bg-primary">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+            <p class="text-muted mb-0 mt-3">Low-margin sales to review: <strong>${{ "%.0f"|format(pricing_owner_summary.low_margin_sales) }}</strong></p>
+          </div>
+          <div class="col-lg-7">
+            <h6 class="mb-3">Next Price Changes to Approve</h6>
+            {% for item in pricing_owner_summary.top_actions %}
+            <div class="border-bottom pb-3 mb-3">
+              <div class="d-flex justify-content-between gap-3">
+                <strong>{{ item.Product_Name }}</strong>
+                <span class="badge bg-info">{{ item.opportunity_label }}</span>
+              </div>
+              <p class="text-muted mb-1">{{ item.seller_suggested_action or item.suggested_action }}</p>
+              <div class="small">Priority {{ "%.0f"|format(item.seller_priority_score or 0) }}%, confidence {{ "%.0f"|format(item.seller_confidence or 0) }}%</div>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No pricing changes need approval in this period.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Any pricing-specific JavaScript can go here
+  });
+</script>
+{% endblock %}

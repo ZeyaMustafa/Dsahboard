@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Error - HDPOS Analytics{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <div class="page-header d-block mb-3">
+    <div class="page-kicker">Something went wrong</div>
+    <h1 class="page-title">{{ message | default('An unexpected error occurred.') }}</h1>
+    <p class="page-subtitle">Please try again or use the navigation menu to continue.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Go to Overview</a>
+    <button onclick="window.history.back()" class="btn btn-outline-secondary">Go Back</button>
+  </div>
+</div>
+{% endblock %}

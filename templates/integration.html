@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block title %}HDPOS Integration - HDPOS Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-kicker">Integration Center</div>
+    <h1 class="page-title">Connect HDPOS data</h1>
+    <p class="page-subtitle">Import POS exports, validate HDPOS fields, and keep the dashboard aligned with your billing data.</p>
+  </div>
+  <div class="text-md-end">
+    <div class="metric-label mb-1">Active rows</div>
+    <div class="fw-bold">{{ summary.rows }}</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-database me-2"></i>Source</div>
+      <div class="metric-value" style="font-size:1.1rem">{{ summary.active_source | default('Not configured') }}</div>
+      <div class="metric-small">Current dashboard sales source</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-calendar me-2"></i>Date Range</div>
+      <div class="metric-value" style="font-size:1.35rem">{{ summary.date_range }}</div>
+      <div class="metric-small">Loaded transaction period</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-barcode me-2"></i>Products</div>
+      <div class="metric-value">{{ summary.products }}</div>
+      <div class="metric-small">Unique SKUs/items</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="metric-card h-100 mb-0">
+      <div class="metric-label"><i class="fas fa-store me-2"></i>Stores</div>
+      <div class="metric-value">{{ summary.stores }}</div>
+      <div class="metric-small">Detected branches/locations</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-file-import me-2"></i>Import HDPOS Export</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="import">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Source Name</label>
+            <input class="form-control" name="source_name" value="HDPOS CSV" placeholder="HDPOS Main Store Export">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">CSV File</label>
+            <input class="form-control" name="hdpos_file" type="file" accept=".csv" required>
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary" type="submit"><i class="fas fa-upload me-2"></i>Import and Activate</button>
+          </div>
+        </form>
+        <hr>
+        <form method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="import_sqlite">
+          <div class="mb-3">
+            <label class="form-label fw-bold">SQLite Source Name</label>
+            <input class="form-control" name="sqlite_source_name" value="HDPOS SQLite" placeholder="HDPOS Local Billing Database">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">SQLite Database File</label>
+            <input class="form-control" name="hdpos_sqlite_file" type="file" accept=".db,.sqlite,.sqlite3" required>
+            <div class="form-text">Upload the local HDPOS `.db`, `.sqlite`, or `.sqlite3` file. The dashboard imports a read-only snapshot.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Sales Table Name</label>
+            <input class="form-control" name="sqlite_table_name" placeholder="Optional, for example SalesDetails">
+            <div class="form-text">Leave blank to auto-detect the table with date, product, quantity, and price fields.</div>
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary" type="submit"><i class="fas fa-database me-2"></i>Import SQLite and Activate</button>
+          </div>
+        </form>
+        <form method="POST" class="mt-3">
+          <input type="hidden" name="action" value="reset_sample">
+          <button class="btn btn-outline-primary w-100" type="submit">Use sample POS data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Required and Recommended Fields</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-5">
+            <h6>Required</h6>
+            {% for field in required_fields %}
+              <div class="badge bg-primary me-1 mb-2">{{ field }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-7">
+            <h6>Recommended for retail profit analysis</h6>
+            {% for field in recommended_fields %}
+              <div class="badge bg-secondary me-1 mb-2">{{ field }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-server me-2"></i>SQL Server POS Live Source</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label fw-bold">Server / Host</label>
+              <input class="form-control" name="sql_server_host" value="{{ sql_server.host }}" placeholder="192.168.1.25 or pos-server">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-bold">Port</label>
+              <input class="form-control" name="sql_server_port" value="{{ sql_server.port }}" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Database</label>
+              <input class="form-control" name="sql_server_database" value="{{ sql_server.database }}" placeholder="POSDB">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">ODBC Driver</label>
+              <input class="form-control" name="sql_server_driver" value="{{ sql_server.driver }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Authentication</label>
+              <select class="form-select" name="sql_server_auth_mode">
+                <option value="sql" {% if sql_server.auth_mode == 'sql' %}selected{% endif %}>SQL Server Login</option>
+                <option value="windows" {% if sql_server.auth_mode == 'windows' %}selected{% endif %}>Windows Authentication</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Read-only Username</label>
+              <input class="form-control" name="sql_server_username" value="{{ sql_server.username }}" autocomplete="username">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Password</label>
+              <input class="form-control" name="sql_server_password" value="{{ sql_server.password }}" type="password" autocomplete="current-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Encrypt</label>
+              <select class="form-select" name="sql_server_encrypt">
+                <option value="yes" {% if sql_server.encrypt == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if sql_server.encrypt == 'no' %}selected{% endif %}>No</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Trust Server Certificate</label>
+              <select class="form-select" name="sql_server_trust_certificate">
+                <option value="yes" {% if sql_server.trust_certificate == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if sql_server.trust_certificate == 'no' %}selected{% endif %}>No</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Read-only Invoice Line Query</label>
+              <textarea class="form-control font-monospace" name="sql_server_query" rows="10">{{ sql_server.query }}</textarea>
+              <div class="form-text">Return one row per invoice line. Use aliases like Invoice_No, Date, Product_Name, Units_Sold, Unit_Price, Total_Sale, and Total_Profit.</div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-bold">Scheduled Sync</label>
+              <select class="form-select" name="sql_server_sync_enabled">
+                <option value="0" {% if not sql_server.sync_enabled %}selected{% endif %}>Off</option>
+                <option value="1" {% if sql_server.sync_enabled %}selected{% endif %}>On</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Every N Minutes</label>
+              <input class="form-control" name="sql_server_sync_interval_minutes" type="number" min="1" value="{{ sql_server.sync_interval_minutes }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <button class="btn btn-primary w-100" name="action" value="save_sql_server" type="submit">Save</button>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <button class="btn btn-outline-primary" name="action" value="test_sql_server" type="submit"><i class="fas fa-plug me-2"></i>Test Connection</button>
+            <button class="btn btn-success" name="action" value="sync_sql_server" type="submit"><i class="fas fa-plug-circle-check me-2"></i>Activate Live SQL</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-shield-halved me-2"></i>SQL Server Sync Status</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="metric-label">Schedule</div>
+          <div class="fw-bold">{% if summary.sql_sync_enabled %}Every {{ summary.sql_interval }} minute(s){% else %}Off{% endif %}</div>
+        </div>
+        <div class="mb-3">
+          <div class="metric-label">Last Sync</div>
+          <div class="fw-bold">{{ summary.sql_last_sync or 'Not synced yet' }}</div>
+        </div>
+        <div class="mb-3">
+          <div class="metric-label">Last Status</div>
+          <p class="mb-0">{{ summary.sql_last_status or 'No SQL Server sync has run yet.' }}</p>
+        </div>
+        <p class="text-muted mb-0">Use a SQL Server read-only user. When live SQL is active, dashboard pages read invoice lines directly from SQL Server for the selected date window.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-plug me-2"></i>HDPOS Compatibility Added</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          {% set fields = summary.optional_presence or {} %}
+          {% for label, key in [
+            ('Invoice numbers', 'Invoice_No'),
+            ('Barcode/SKU support', 'Barcode'),
+            ('Batch or lot tracking', 'Batch_No'),
+            ('Store/location support', 'Store_ID'),
+            ('Supplier/vendor', 'Supplier'),
+            ('GST/VAT/tax', 'Tax_Amount'),
+            ('Discount tracking', 'Discount_Amount'),
+            ('Payment mode', 'Payment_Mode'),
+            ('Customer/loyalty ID', 'Customer_ID'),
+            ('Cashier/employee', 'Cashier_ID'),
+            ('Returns/refunds', 'Is_Return'),
+            ('Expiry date', 'Expiry_Date')
+          ] %}
+          <div class="col-md-6">
+            <div class="d-flex align-items-center justify-content-between border rounded p-2">
+              <span>{{ label }}</span>
+              {% if fields.get(key) %}
+                <span class="badge bg-success">Detected</span>
+              {% else %}
+                <span class="badge bg-secondary">Ready</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-coins me-2"></i>Profit Modules Enabled by HDPOS Data</h5>
+      </div>
+      <div class="card-body">
+        <p><strong>High impact:</strong> store-wise performance, stockout prevention, expiry/batch loss control, discount leakage, supplier margin, cashier audit, customer loyalty analysis, and GST/tax breakdown.</p>
+        <p class="mb-0 text-muted">CSV, SQLite, and SQL Server integrations are read-only sources. SQL Server sync can refresh manually or on a schedule once the POS query is mapped.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Import History</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Time</th>
+            <th>Source</th>
+            <th>File</th>
+            <th>Status</th>
+            <th>Rows</th>
+            <th>Failed</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td>{{ log.created_at }}</td>
+            <td>{{ log.source_name }}</td>
+            <td>{{ log.file_name or '-' }}</td>
+            <td>
+              {% if log.status == 'success' %}
+                <span class="badge bg-success">Success</span>
+              {% else %}
+                <span class="badge bg-danger">Failed</span>
+              {% endif %}
+            </td>
+            <td>{{ log.rows_imported }}</td>
+            <td>{{ log.rows_failed }}</td>
+            <td>{{ log.message }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-muted">No imports yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
